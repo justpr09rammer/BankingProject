@@ -1,16 +1,14 @@
 package com.example.bankingproject.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class BankResponse {
-    private String responseCode;
-    private String responseMessage;
-    private AccountInfo accountInfo;
+public class CreditDebitRequest {
+    private String accountNumber;
+    private BigDecimal amount;
 }

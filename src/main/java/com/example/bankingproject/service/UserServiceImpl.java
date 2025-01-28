@@ -1,10 +1,7 @@
 package com.example.bankingproject.service;
 
 
-import com.example.bankingproject.dto.AccountInfo;
-import com.example.bankingproject.dto.BankResponse;
-import com.example.bankingproject.dto.EmailDetails;
-import com.example.bankingproject.dto.UserRequest;
+import com.example.bankingproject.dto.*;
 import com.example.bankingproject.entity.User;
 import com.example.bankingproject.enums.UserStatus;
 import com.example.bankingproject.repository.UserRepository;
@@ -53,10 +50,10 @@ public class UserServiceImpl implements UserService {
                 .subject("ACCOUNT CREATION")
                 .messageBody("Congratulations your account has been created !\n" +
                         "Account name " + savedUser.getFirstName() + " " + savedUser.getLastName() + "\n Account number is " + savedUser.getAccountNumber())
-
-
                 .build();
+
         emailService.sendEmail(emailDetails);
+
         return BankResponse.builder()
                 .responseCode(AccountUtils.ACCOUNT_CREATION_SUCCESS)
                 .responseMessage(AccountUtils.ACCOUNT_CREATION_MESSAGE)
@@ -66,5 +63,115 @@ public class UserServiceImpl implements UserService {
                         .accountName(savedUser.getFirstName() + " " + savedUser.getLastName())
                         .build())
                 .build();
+    }
+
+    @Override
+    public BankResponse balanceEnquiry(EnquiryRequest enquiryRequest) {
+        boolean isAccountExists = userRepository.existsByAccountNumber(enquiryRequest.getAccountNumber());
+        if (!isAccountExists) {
+            return BankResponse.builder()
+                    .responseCode(AccountUtils.ACCOUNT_NOT_EXISTS_CODE)
+                    .responseMessage(AccountUtils.ACCOUNT_NOT_EXISTS_MESSAGE)
+                    .accountInfo(null)
+                    .build();
+        }
+        User foundUser = userRepository.findByAccountNumber(enquiryRequest.getAccountNumber());
+        return BankResponse.builder()
+                .responseCode(AccountUtils.ACCOUNT_FOUND_CODE)
+                .responseMessage(AccountUtils.ACCOUNT_FOUND_MESSAGE)
+                .accountInfo(AccountInfo.builder()
+                        .accountBalance(foundUser.getAccountBalance())
+                        .accountNumber(foundUser.getAccountNumber())
+                        .accountName(foundUser.getFirstName() + " " + foundUser.getLastName() + " " + foundUser.getOtherName())
+                        .build())
+                .build();
+    }
+
+    @Override
+    public String nameEnquiry(EnquiryRequest enquiryRequest) {
+        boolean isAccountExists = userRepository.existsByAccountNumber(enquiryRequest.getAccountNumber());
+
+        if (!isAccountExists) {
+            return AccountUtils.ACCOUNT_NOT_EXISTS_MESSAGE;
+        }
+
+
+        User foundUser = userRepository.findByAccountNumber(enquiryRequest.getAccountNumber());
+
+        return foundUser.getFirstName() + " " + foundUser.getLastName() + " " + foundUser.getOtherName();
+    }
+
+    @Override
+    public BankResponse creditAccount(CreditDebitRequest creditDebitRequest) {
+
+
+        boolean isAccountExists = userRepository.existsByAccountNumber(creditDebitRequest.getAccountNumber());
+
+        if (!isAccountExists) {
+            return BankResponse.builder()
+                    .responseCode(AccountUtils.ACCOUNT_NOT_EXISTS_CODE)
+                    .responseMessage(AccountUtils.ACCOUNT_NOT_EXISTS_MESSAGE)
+                    .accountInfo(null)
+                    .build();
+        }
+
+
+
+        User userToCredit = userRepository.findByAccountNumber(creditDebitRequest.getAccountNumber());
+
+
+        userToCredit.setAccountBalance(userToCredit.getAccountBalance().add(creditDebitRequest.getAmount()));
+
+
+        userRepository.save(userToCredit);
+        return BankResponse.builder()
+                .responseCode(AccountUtils.ACCOUNT_CREDITED_CODE)
+                .responseMessage(AccountUtils.ACCOUNT_CREDITED_MESSAGE)
+                .accountInfo(AccountInfo.builder()
+                        .accountName(userToCredit.getFirstName() + " " + userToCredit.getLastName() + " " + userToCredit.getOtherName())
+                        .accountBalance(userToCredit.getAccountBalance())
+                        .accountNumber(userToCredit.getAccountNumber())
+                        .build())
+                .build();
+    }
+
+    @Override
+    public BankResponse debitAccount(CreditDebitRequest creditDebitRequest) {
+        boolean isAccountExists = userRepository.existsByAccountNumber(creditDebitRequest.getAccountNumber());
+        if (!isAccountExists) {
+            return BankResponse.builder()
+                    .responseCode(AccountUtils.ACCOUNT_NOT_EXISTS_CODE)
+                    .responseMessage(AccountUtils.ACCOUNT_NOT_EXISTS_MESSAGE)
+                    .accountInfo(null)
+                    .build();
+        }
+
+        User userToDebit = userRepository.findByAccountNumber(creditDebitRequest.getAccountNumber());
+
+
+        if (userToDebit.getAccountBalance().compareTo(creditDebitRequest.getAmount()) < 0) {
+            return BankResponse.builder()
+                    .responseCode(AccountUtils.INSUFFICIENT_FUNDS_CODE)
+                    .responseMessage(AccountUtils.INSUFFICIENT_FUNDS_MESSAGE)
+                    .accountInfo(null)
+                    .build();
+        }
+
+
+        userToDebit.setAccountBalance(userToDebit.getAccountBalance().subtract(creditDebitRequest.getAmount()));
+
+
+        userRepository.save(userToDebit);
+
+        return BankResponse.builder()
+                .responseCode(AccountUtils.SUCCESS_CODE)
+                .responseMessage(AccountUtils.SUCCESS_MESSAGE)
+                .accountInfo(AccountInfo.builder()
+                        .accountBalance(userToDebit.getAccountBalance())
+                        .accountNumber(userToDebit.getAccountNumber())
+                        .accountName(userToDebit.getFirstName() + " " + userToDebit.getLastName() + " " + userToDebit.getOtherName())
+                        .build())
+                .build();
+
     }
 }
