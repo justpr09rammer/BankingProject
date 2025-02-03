@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>LTC Bank - Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            font-family: 'Poppins', sans-serif;
+            color: white;
+        }
+        .navbar {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            text-align: center;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+        .navbar a:hover {
+            color: #ffcc00;
+        }
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            margin: auto;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            margin-top: 40px;
+        }
+        .card-container, .about-bank, .features {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 15px;
+            margin: 10px 0;
+        }
+        .card-number {
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .balance {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .btn-custom {
+            background: linear-gradient(135deg, #ffcc00, #ff6600);
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 30px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-custom:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(255, 204, 0, 0.5);
+        }
+        .transaction-history {
+            text-align: left;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .transaction-history h4 {
+            color: #ffcc00;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.6);
+        }
+        .footer a {
+            color: #ffcc00;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<div class="navbar">
+    <a href="#"><i class="fas fa-home"></i> Home</a>
+    <a href="#"><i class="fas fa-exchange-alt"></i> Transactions</a>
+    <a href="#"><i class="fas fa-user"></i> Profile</a>
+    <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+
+<!-- Dashboard Container -->
+<div class="dashboard-container">
+    <h2>Welcome, <span th:text="${user.firstName}">User</span>! 🏦</h2>
+
+    <!-- Card Details -->
+    <div class="card-container">
+        <h4><i class="fas fa-credit-card"></i> Your Card</h4>
+        <p class="card-number">**** **** **** <span th:text="${maskedCardNumber}">1234</span></p>
+    </div>
+
+    <!-- Balance -->
+    <div class="card-container">
+        <h4><i class="fas fa-wallet"></i> Account Balance</h4>
+        <p class="balance">$<span th:text="${user.balance}">0.00</span></p>
+    </div>
+
+    <!-- Transfer Money -->
+    <form th:action="@{/transfer}" method="post">
+        <input type="text" class="form-control" name="recipientAccount" placeholder="Recipient Account Number" required>
+        <input type="number" class="form-control mt-2" name="amount" placeholder="Amount ($)" required>
+        <button type="submit" class="btn btn-custom">Send Money <i class="fas fa-paper-plane"></i></button>
+    </form>
+
+    <!-- Transaction History -->
+    <div class="transaction-history">
+        <h4><i class="fas fa-history"></i> Transaction History</h4>
+        <ul th:each="transaction : ${transactions}">
+            <li th:text="${transaction.details}">You sent $100 to John Doe</li>
+        </ul>
+    </div>
+
+    <!-- About Our Bank -->
+    <div class="about-bank">
+        <h4><i class="fas fa-university"></i> About LTC Bank</h4>
+        <p>LTC Bank has been your trusted partner in banking since 1990. We provide secure and reliable financial solutions to individuals and businesses worldwide.</p>
+    </div>
+
+    <!-- Features Section -->
+    <div class="features">
+        <h4><i class="fas fa-star"></i> Our Features</h4>
+        <ul style="text-align: left;">
+            <li><i class="fas fa-coins"></i> Instant Money Transfers</li>
+            <li><i class="fas fa-piggy-bank"></i> High-Interest Savings Accounts</li>
+            <li><i class="fas fa-hand-holding-usd"></i> Easy Loan Applications</li>
+            <li><i class="fas fa-chart-line"></i> Investment Opportunities</li>
+        </ul>
+    </div>
+</div>
+<!-- Currency Selection -->
+<div class="card-container">
+    <h4><i class="fas fa-exchange-alt"></i> Choose Currency</h4>
+    <select id="currencySelector" class="form-select" onchange="convertCurrency()">
+        <option value="USD" selected>💵 USD</option>
+        <option value="AZN">🇦🇿 AZN</option>
+        <option value="RUB">🇷🇺 RUB</option>
+        <option value="TRY">🇹🇷 TRY</option>
+    </select>
+</div>
+
+<!-- Updated Balance Display -->
+<div class="card-container">
+    <h4><i class="fas fa-wallet"></i> Account Balance</h4>
+    <p class="balance" id="balanceDisplay">$<span th:text="${user.balance}">0.00</span> <span id="currencyUnit">USD</span></p>
+</div>
+
+<!-- JavaScript for Currency Conversion -->
+<script>
+    function convertCurrency() {
+        let rates = {
+            "USD": 1,      // Base currency
+            "AZN": 1.7,    // 1 USD = 1.7 AZN
+            "RUB": 90,     // 1 USD = 90 RUB
+            "TRY": 30      // 1 USD = 30 TRY
+        };
+
+        let selectedCurrency = document.getElementById("currencySelector").value;
+        let balance = parseFloat(document.getElementById("balanceDisplay").innerText.match(/\d+(\.\d+)?/)[0]);
+
+        // Convert balance
+        let convertedBalance = (balance * rates[selectedCurrency]).toFixed(2);
+
+        // Update balance display
+        document.getElementById("balanceDisplay").innerHTML = convertedBalance + " " + selectedCurrency;
+    }
+</script>
+
+<!-- Footer -->
+<div class="footer">
+    <p>&copy; 2025 LTC Bank. All rights reserved.</p>
+    <p>
+        <a href="#"><i class="fab fa-facebook"></i></a>
+        <a href="#"><i class="fab fa-twitter"></i></a>
+        <a href="#"><i class="fab fa-linkedin"></i></a>
+        <a href="#"><i class="fab fa-instagram"></i></a>
+    </p>
+</div>
+
+</body>
+</html>
