@@ -8,14 +8,18 @@ public class AccountUtils {
     public static final String ACCOUNT_EXISTS_CODE = "001";
     public static final String ACCOUNT_EXISTS_MESSAGE = "This user already has an account CREATED";
 
+
     public static final String ACCOUNT_CREATION_SUCCESS = "002";
     public static final String ACCOUNT_CREATION_MESSAGE = "Account creation successful";
+
 
     public static final String ACCOUNT_NOT_EXISTS_CODE = "003";
     public static final String ACCOUNT_NOT_EXISTS_MESSAGE = "Account with the provided information does not exist";
 
+
     public static final String ACCOUNT_FOUND_CODE = "004";
     public static final String ACCOUNT_FOUND_MESSAGE = "Account with the provided information exists";
+
 
     public static final String ACCOUNT_CREDITED_CODE = "005";
     public static final String ACCOUNT_CREDITED_MESSAGE = "Credit account created successful";
@@ -24,9 +28,15 @@ public class AccountUtils {
     public static final String INSUFFICIENT_FUNDS_CODE = "006";
     public static final String INSUFFICIENT_FUNDS_MESSAGE = "Insufficient Funds";
 
+
     public static final String SUCCESS_CODE = "007";
     public static final String SUCCESS_MESSAGE = "Debit Operation has been completed successfully";
 
+
+    public static final String ACCOUNT_DEBITED_MESSAGE = "Account has been successfully debited";
+
+    public static final String TRANSFER_SUCCESS_CODE = "Transferred Successfully";
+    public static final String TRANSFER_SUCCESS_MESSAGE = "008";
 
 
     //it should be smth like current year + sixDigit

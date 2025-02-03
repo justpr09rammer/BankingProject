@@ -1,9 +1,6 @@
 package com.example.bankingproject.controller;
 
-import com.example.bankingproject.dto.BankResponse;
-import com.example.bankingproject.dto.CreditDebitRequest;
-import com.example.bankingproject.dto.EnquiryRequest;
-import com.example.bankingproject.dto.UserRequest;
+import com.example.bankingproject.dto.*;
 import com.example.bankingproject.repository.UserRepository;
 import com.example.bankingproject.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +14,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping
+    @PostMapping("/create")
     public BankResponse createAccount(@RequestBody UserRequest userRequest) {
         return userService.createAccount(userRequest);
     }
@@ -41,5 +38,9 @@ public class UserController {
         return userService.debitAccount(creditDebitRequest);
     }
 
+    @PostMapping("/transfer")
+    public BankResponse transferAccount(@RequestBody TransferRequest transferRequest) {
+        return userService.transfer(transferRequest);
+    }
 
 }

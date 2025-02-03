@@ -8,6 +8,7 @@ import com.example.bankingproject.repository.UserRepository;
 import com.example.bankingproject.utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
@@ -19,6 +20,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private EmailService emailService;
+
+
+
     @Override
     public BankResponse createAccount(UserRequest userRequest) {
         // we re just tryna check if the user already exists by email or phone number
@@ -26,6 +30,7 @@ public class UserServiceImpl implements UserService {
             return BankResponse.builder()
                     .responseCode(AccountUtils.ACCOUNT_EXISTS_CODE)
                     .responseMessage(AccountUtils.ACCOUNT_EXISTS_MESSAGE)
+                    .accountInfo(null)
                     .build();
         }
         User newUser = User.builder()
@@ -60,15 +65,15 @@ public class UserServiceImpl implements UserService {
                 .accountInfo(AccountInfo.builder()
                         .accountBalance(savedUser.getAccountBalance())
                         .accountNumber(savedUser.getAccountNumber())
-                        .accountName(savedUser.getFirstName() + " " + savedUser.getLastName())
+                        .accountName(savedUser.getFirstName() + " " + savedUser.getLastName() + " " + savedUser.getOtherName())
                         .build())
                 .build();
     }
 
     @Override
     public BankResponse balanceEnquiry(EnquiryRequest enquiryRequest) {
-        boolean isAccountExists = userRepository.existsByAccountNumber(enquiryRequest.getAccountNumber());
-        if (!isAccountExists) {
+        boolean doesAccountExist = userRepository.existsByAccountNumber(enquiryRequest.getAccountNumber());
+        if (!doesAccountExist) {
             return BankResponse.builder()
                     .responseCode(AccountUtils.ACCOUNT_NOT_EXISTS_CODE)
                     .responseMessage(AccountUtils.ACCOUNT_NOT_EXISTS_MESSAGE)
@@ -89,9 +94,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String nameEnquiry(EnquiryRequest enquiryRequest) {
-        boolean isAccountExists = userRepository.existsByAccountNumber(enquiryRequest.getAccountNumber());
+        boolean doesAccountExist = userRepository.existsByAccountNumber(enquiryRequest.getAccountNumber());
 
-        if (!isAccountExists) {
+        if (!doesAccountExist) {
             return AccountUtils.ACCOUNT_NOT_EXISTS_MESSAGE;
         }
 
@@ -105,9 +110,9 @@ public class UserServiceImpl implements UserService {
     public BankResponse creditAccount(CreditDebitRequest creditDebitRequest) {
 
 
-        boolean isAccountExists = userRepository.existsByAccountNumber(creditDebitRequest.getAccountNumber());
+        boolean doesAccountExist = userRepository.existsByAccountNumber(creditDebitRequest.getAccountNumber());
 
-        if (!isAccountExists) {
+        if (!doesAccountExist) {
             return BankResponse.builder()
                     .responseCode(AccountUtils.ACCOUNT_NOT_EXISTS_CODE)
                     .responseMessage(AccountUtils.ACCOUNT_NOT_EXISTS_MESSAGE)
@@ -137,15 +142,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public BankResponse debitAccount(CreditDebitRequest creditDebitRequest) {
-        boolean isAccountExists = userRepository.existsByAccountNumber(creditDebitRequest.getAccountNumber());
-        if (!isAccountExists) {
+        boolean doesAccountExist = userRepository.existsByAccountNumber(creditDebitRequest.getAccountNumber());
+        if (!doesAccountExist) {
             return BankResponse.builder()
                     .responseCode(AccountUtils.ACCOUNT_NOT_EXISTS_CODE)
                     .responseMessage(AccountUtils.ACCOUNT_NOT_EXISTS_MESSAGE)
                     .accountInfo(null)
                     .build();
         }
-
         User userToDebit = userRepository.findByAccountNumber(creditDebitRequest.getAccountNumber());
 
 
@@ -156,11 +160,7 @@ public class UserServiceImpl implements UserService {
                     .accountInfo(null)
                     .build();
         }
-
-
         userToDebit.setAccountBalance(userToDebit.getAccountBalance().subtract(creditDebitRequest.getAmount()));
-
-
         userRepository.save(userToDebit);
 
         return BankResponse.builder()
@@ -173,5 +173,51 @@ public class UserServiceImpl implements UserService {
                         .build())
                 .build();
 
+    }
+
+    @Transactional
+    public BankResponse transfer(TransferRequest transferRequest) {
+        boolean doesDestinationAccountExist = userRepository.existsByAccountNumber(transferRequest.getDestinationAccountNumber());
+        if (!doesDestinationAccountExist) {
+            return BankResponse.builder()
+                    .responseCode(AccountUtils.ACCOUNT_NOT_EXISTS_CODE)
+                    .responseMessage(AccountUtils.ACCOUNT_NOT_EXISTS_MESSAGE)
+                    .accountInfo(null)
+                    .build();
+        }
+        User userSourceAccount = userRepository.findByAccountNumber(transferRequest.getSourceAccountNumber());
+        User userDestinationAccount = userRepository.findByAccountNumber(transferRequest.getDestinationAccountNumber());
+
+        if (userSourceAccount.getAccountBalance().compareTo(transferRequest.getAmount()) < 0) {
+            return BankResponse.builder()
+                    .responseCode(AccountUtils.INSUFFICIENT_FUNDS_CODE)
+                    .responseMessage(AccountUtils.INSUFFICIENT_FUNDS_MESSAGE)
+                    .accountInfo(null)
+                    .build();
+        }
+
+
+        userSourceAccount.setAccountBalance(userSourceAccount.getAccountBalance().subtract(transferRequest.getAmount()));
+        userDestinationAccount.setAccountBalance(userDestinationAccount.getAccountBalance().add(transferRequest.getAmount()));
+
+        EmailDetails debitAlert = EmailDetails.builder()
+                .subject("Debit Alert")
+                .recipient(userSourceAccount.getEmail())
+                .messageBody("The amount of " + transferRequest.getAmount() + " has been deducted from your account " + userSourceAccount.getAccountNumber() + ". Your current balance is " + userSourceAccount.getAccountBalance())
+                .build();
+        emailService.sendEmail(debitAlert);
+
+        EmailDetails creditAlert = EmailDetails.builder()
+                .subject("Credit Alert")
+                .recipient(userDestinationAccount.getEmail())
+                .messageBody("The amount of " + transferRequest.getAmount() + " has been credited to your account " + userDestinationAccount.getAccountNumber() + ". Your current balance is " + userDestinationAccount.getAccountBalance())
+                .build();
+        emailService.sendEmail(creditAlert);
+
+        return BankResponse.builder()
+                .responseCode(AccountUtils.TRANSFER_SUCCESS_CODE)
+                .responseMessage(AccountUtils.TRANSFER_SUCCESS_MESSAGE + "The amount of " + transferRequest.getAmount() + " has been deducted from your account " + userSourceAccount.getAccountNumber() + ". Your current balance is " + userSourceAccount.getAccountBalance() + "The amount of " + transferRequest.getAmount() + " has been credited to your account " + userDestinationAccount.getAccountNumber())
+                .accountInfo(null)
+                .build();
     }
 }
