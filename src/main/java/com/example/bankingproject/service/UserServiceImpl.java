@@ -21,6 +21,10 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    TransactionService transactionService;
+
+
 
 
     @Override
@@ -129,6 +133,18 @@ public class UserServiceImpl implements UserService {
 
 
         userRepository.save(userToCredit);
+
+
+        //Save transaction
+        TransactionDto transactionDto=TransactionDto.builder()
+                .accountNumber(userToCredit.getAccountNumber())
+                .transactionType("CREDIT")
+                .amount(creditDebitRequest.getAmount())
+                .build();
+
+        transactionService.saveTransaction(transactionDto);
+
+
         return BankResponse.builder()
                 .responseCode(AccountUtils.ACCOUNT_CREDITED_CODE)
                 .responseMessage(AccountUtils.ACCOUNT_CREDITED_MESSAGE)
@@ -160,8 +176,16 @@ public class UserServiceImpl implements UserService {
                     .accountInfo(null)
                     .build();
         }
+
         userToDebit.setAccountBalance(userToDebit.getAccountBalance().subtract(creditDebitRequest.getAmount()));
         userRepository.save(userToDebit);
+        TransactionDto transactionDto=TransactionDto.builder()
+                .accountNumber(userToDebit.getAccountNumber())
+                .transactionType("CREDIT")
+                .amount(creditDebitRequest.getAmount())
+                .build();
+
+        transactionService.saveTransaction(transactionDto);
 
         return BankResponse.builder()
                 .responseCode(AccountUtils.SUCCESS_CODE)
@@ -214,10 +238,22 @@ public class UserServiceImpl implements UserService {
                 .build();
         emailService.sendEmail(creditAlert);
 
+        TransactionDto transactionDto=TransactionDto.builder()
+                .accountNumber(userDestinationAccount.getAccountNumber())
+                .transactionType("CREDIT")
+                .amount(transferRequest.getAmount())
+                .build();
+
+        transactionService.saveTransaction(transactionDto);
+
+
         return BankResponse.builder()
                 .responseCode(AccountUtils.TRANSFER_SUCCESS_CODE)
                 .responseMessage(AccountUtils.TRANSFER_SUCCESS_MESSAGE + "The amount of " + transferRequest.getAmount() + " has been deducted from your account " + userSourceAccount.getAccountNumber() + ". Your current balance is " + userSourceAccount.getAccountBalance() + "The amount of " + transferRequest.getAmount() + " has been credited to your account " + userDestinationAccount.getAccountNumber())
                 .accountInfo(null)
                 .build();
     }
+
+
+    //balance Enquiry, name Enquiry, credit, debit, transfer
 }
