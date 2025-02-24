@@ -26,7 +26,6 @@ public class UserServiceImpl implements UserService {
 
 
 
-
     @Override
     public BankResponse createAccount(UserRequest userRequest) {
         // we re just tryna check if the user already exists by email or phone number

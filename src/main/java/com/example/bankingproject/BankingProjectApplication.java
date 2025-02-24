@@ -23,12 +23,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
                         url = "https://github.com/justpr09rammer/BankingProject.git"
                 ),
                 license = @License(
-                        name ="The Java Acad emy",
+                        name ="LTC bank",
                         url = "https://github.com/justpr09rammer/BankingProject.git"
                 )
         ),
         externalDocs = @ExternalDocumentation(
-                description = "The Java Academy Bank App Documentation",
+                description = "",
                 url ="https://github.com/justpr09rammer/BankingProject.git"
         )
 )
