@@ -1,6 +1,7 @@
 package com.example.bankingproject.service;
 
 
+import com.example.bankingproject.config.JwtTokenProvider;
 import com.example.bankingproject.dto.*;
 import com.example.bankingproject.entity.User;
 import com.example.bankingproject.enums.UserStatus;
@@ -8,10 +9,14 @@ import com.example.bankingproject.repository.UserRepository;
 import com.example.bankingproject.utils.AccountUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.validation.constraints.Email;
 import java.math.BigDecimal;
 
 @Service
@@ -27,13 +32,20 @@ public class UserServiceImpl implements UserService {
     @Autowired
     TransactionService transactionService;
 
+    @Autowired
+    AuthenticationManager authenticationManager;
 
     @Autowired
     PasswordEncoder passwordEncoder;
 
+    @Autowired
+    JwtTokenProvider jwtTokenProvider;
+
+
+
     @Override
     public BankResponse createAccount(UserRequest userRequest) {
-        // we re just tryna check if the user already exists by email or phone number
+        // we re just trying to check if the user already exists by email or phone number
         if (userRepository.existsByEmail(userRequest.getEmail()) || userRepository.existsByPhoneNumber(userRequest.getPhoneNumber())) {
             return BankResponse.builder()
                     .responseCode(AccountUtils.ACCOUNT_EXISTS_CODE)
@@ -78,6 +90,31 @@ public class UserServiceImpl implements UserService {
                         .build())
                 .build();
     }
+
+
+
+    public BankResponse login(LoginDto loginDto){
+        Authentication authentication = null;
+        authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword()));
+
+        EmailDetails loginAlert = EmailDetails.builder()
+                .subject("You Have Logged In")
+                .recipient(loginDto.getEmail())
+                .messageBody("You have logged into your account. If this was not you, please contact the bank immediately.")
+                .build();
+
+
+        emailService.sendEmail(loginAlert);
+
+        return BankResponse.builder()
+                .responseCode("Login success")
+                .responseMessage(jwtTokenProvider.generateToken(authentication))
+
+                .build();
+
+    }
+
 
     @Override
     public BankResponse balanceEnquiry(EnquiryRequest enquiryRequest) {

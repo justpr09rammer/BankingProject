@@ -45,6 +45,16 @@ public class UserController {
             responseCode = "200",
             description = "Http Status 200 SUCCES"
     )
+
+
+    @PostMapping("/login")
+    public BankResponse login(@RequestBody LoginDto loginDto) {
+        return userService.login(loginDto);
+    }
+
+
+
+
     @GetMapping("/enquiry/balance")
     public BankResponse balanceEnquiry(@RequestBody EnquiryRequest enquiryRequest) {
         return userService.balanceEnquiry(enquiryRequest);
